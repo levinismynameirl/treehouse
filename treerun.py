@@ -68,7 +68,9 @@ async def on_ready():
 async def load_extensions():
     """Load all cog extensions."""
     extensions = [
-        "cogs.moderationt"
+        "cogs.moderationt",
+        "cogs.youtubefetcht",
+        "cogs.twitchfetcht",
     ]
     
     for extension in extensions:
