@@ -71,6 +71,8 @@ async def load_extensions():
         "cogs.moderationt",
         "cogs.youtubefetcht",
         "cogs.twitchfetcht",
+        "cogs.misct",
+        "cogs.tbridget",
     ]
     
     for extension in extensions:

@@ -1,2 +1,6 @@
 discord.py
 python-dotenv
+aiohttp
+asyncio
+asyncio-sqlite
+twitchio
