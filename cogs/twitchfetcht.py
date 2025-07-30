@@ -4,6 +4,7 @@ import aiohttp
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
+import re
 
 # Load .env
 load_dotenv()
@@ -46,7 +47,9 @@ class TwitchStats(commands.Cog):
         }
         async with session.get(f"https://api.twitch.tv/helix/users?login={TWITCH_USERNAME1}", headers=headers) as resp:
             data = await resp.json()
-            return data["data"][0] if data["data"] else None
+            if not data.get("data"):
+                print("Twitch API user response:", data)
+            return data["data"][0] if data.get("data") else None
 
     async def get_followers(self, session, token, user_id):
         headers = {
@@ -56,18 +59,20 @@ class TwitchStats(commands.Cog):
         url = f"https://api.twitch.tv/helix/users/follows?to_id={user_id}"
         async with session.get(url, headers=headers) as resp:
             data = await resp.json()
-            # Debug: print(data)
+            if data.get("total", 0) == 0:
+                print("Twitch API followers response:", data)
             return int(data.get("total", 0))
 
     async def get_channel_views(self, session, token, user_id):
-        # This is included in the user object as "view_count"
         headers = {
             "Client-ID": TWITCH_CLIENT_ID1,
             "Authorization": f"Bearer {token}"
         }
         async with session.get(f"https://api.twitch.tv/helix/users?id={user_id}", headers=headers) as resp:
             data = await resp.json()
-            if data["data"]:
+            if not data.get("data"):
+                print("Twitch API views response:", data)
+            if data.get("data"):
                 return int(data["data"][0].get("view_count", 0))
             return 0
 
@@ -79,7 +84,21 @@ class TwitchStats(commands.Cog):
         url = f"https://api.twitch.tv/helix/videos?user_id={user_id}&type=archive&first=100"
         async with session.get(url, headers=headers) as resp:
             data = await resp.json()
+            if not data.get("data"):
+                print("Twitch API videos response:", data)
             return data.get("data", [])
+
+    def parse_twitch_duration(self, duration_str):
+        # Twitch duration: e.g. "2h13m5s", "45m", "1h", "30s"
+        h = m = s = 0
+        for value, unit in re.findall(r'(\d+)([hms])', duration_str):
+            if unit == 'h':
+                h = int(value)
+            elif unit == 'm':
+                m = int(value)
+            elif unit == 's':
+                s = int(value)
+        return h + m / 60 + s / 3600
 
     @commands.command(name="twitchstats", aliases=["twinfo", "hammerlive"])
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
@@ -115,15 +134,7 @@ class TwitchStats(commands.Cog):
                     if not last_stream_date or dt > last_stream_date:
                         last_stream_date = dt
                     if dt.year == current_year and duration_str:
-                        # Convert Twitch duration string to seconds
-                        h, m, s = 0, 0, 0
-                        import re
-                        match = re.match(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", duration_str)
-                        if match:
-                            h = int(match.group(1) or 0)
-                            m = int(match.group(2) or 0)
-                            s = int(match.group(3) or 0)
-                        hours_streamed += h + m / 60 + s / 3600
+                        hours_streamed += self.parse_twitch_duration(duration_str)
 
             # Format last stream date
             last_stream_str = (

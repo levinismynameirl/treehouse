@@ -74,6 +74,18 @@ class Misc(commands.Cog):
         embed.add_field(name="Boost Level", value=guild.premium_tier, inline=True)
         embed.add_field(name="Boosts", value=guild.premium_subscription_count, inline=True)
         await ctx.send(embed=embed)
+    
+    @commands.command()
+    async def hammer(self, ctx):
+        """Sends a picture of a snail"""
+        embed = discord.Embed(
+            title="snail",
+            description="snail",
+            color=discord.Color.green()
+        )
+        embed.set_image(url="https://cdn.hswstatic.com/gif/gettyimages-568151731.jpg")
+        await ctx.send(embed=embed)
+        
 
     @commands.command()
     async def roleinfo(self, ctx, role: discord.Role):
@@ -127,9 +139,16 @@ class Misc(commands.Cog):
 
         await asyncio.sleep(duration.total_seconds())
 
-        # Fetch message again to get all reactions
+        # Fetch message again to get all updated reactions
         giveaway_msg = await ctx.channel.fetch_message(giveaway_msg.id)
-        users = await giveaway_msg.reactions[0].users().flatten()
+
+        # Find the 🎉 reaction specifically
+        reaction = discord.utils.get(giveaway_msg.reactions, emoji="🎉")
+        if reaction is None:
+            await ctx.send("❌ No one reacted with 🎉.")
+            return
+
+        users = await reaction.users().flatten()
         users = [u for u in users if not u.bot]
 
         if not users:
@@ -138,6 +157,17 @@ class Misc(commands.Cog):
 
         winner = random.choice(users)
         await ctx.send(f"🎉 Congratulations {winner.mention}! You won **{item}**!")
+
+    def parse_duration(self, time_str: str) -> timedelta:
+        # Custom duration parser
+        import re
+        pattern = r"((?P<hours>\d+)h)?((?P<minutes>\d+)m)?((?P<seconds>\d+)s)?"
+        match = re.fullmatch(pattern, time_str.strip())
+        if not match:
+            raise ValueError("Invalid duration format.")
+
+        time_data = {key: int(val) if val else 0 for key, val in match.groupdict().items()}
+        return timedelta(**time_data)
 
     def parse_duration(self, duration_str):
         # Supports formats like 1h30m, 45m, 120s, 2h, etc.
@@ -192,6 +222,24 @@ class Misc(commands.Cog):
             await ctx.message.delete()
         except discord.Forbidden:
             pass  # Bot can't delete the message
+
+    @commands.command()
+    async def unbump(self, ctx):
+        """
+        Does nothing except send an 'unbump' embed.
+        """
+        embed = discord.Embed(
+            title="**UNBOARD: The Private Server Sinkhole**",
+            description=(
+                "Unbump complete. :thumbsdown:\n"
+                "This server is now significantly harder to find.\n\n"
+                "Proudly powered by outdated code, duct tape, and sheer stubbornness.\n"
+                "No costs were covered. No help was received. No one asked for this. (actually fish did but whatever)"
+            ),
+            color=discord.Color.dark_gray()
+        )
+        embed.set_image(url="https://media.discordapp.net/attachments/1347242655515414590/1400150836574949376/invert.png?ex=688b9794&is=688a4614&hm=af2f1a12c97d2136c1dbeed9e5c6606ce45f1c56253835bf490d808bc44094a4&=&format=webp&quality=lossless&width=384&height=384")
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Misc(bot))

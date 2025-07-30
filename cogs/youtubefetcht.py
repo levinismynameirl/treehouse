@@ -95,7 +95,7 @@ class YouTubeStats(commands.Cog):
     @youtube_info.error
     async def youtube_info_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"❌ This command can only be used once every 1 hour per user to comply with Google API quota limits. Try again in {int(error.retry_after // 60)}m {int(error.retry_after) % 60}s.")
+            await ctx.send(f"❌ This command can only be used once every 1 hour per user to comply with Google API monthly limits. Try again in {int(error.retry_after // 60)}m {int(error.retry_after) % 60}s.")
         else:
             raise error
 
